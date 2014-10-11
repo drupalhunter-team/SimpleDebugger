@@ -2,6 +2,8 @@
 #include <string>
 #include <map>
 
+#define PACKAGE // Needed for Apple's MAcPorts version of bfd.h
+
 using namespace std;
 
 class Symbols

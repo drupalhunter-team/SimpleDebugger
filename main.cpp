@@ -1,11 +1,22 @@
-#include <sys/ptrace.h>
+#include <unistd.h>
 #include <sys/types.h>
+#include <sys/ptrace.h>
+
+// MacOS
+#include <libgen.h>
+
 #include <sys/wait.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <stdlib.h>
-#include <string.h>
 #include "Symbols.h"
+
+#ifdef __APPLE__
+#define TRACE_ME PT_TRACE_ME
+#define TRACE_CONTINUE PT_CONTINUE
+#elif __linux
+#define TRACE_ME PTRACE_TRACEME
+#define TRACE_CONTINUE PTRACE_CONT
+#endif
 
 int main(int argc, char *argv[]) {
 
@@ -24,7 +35,7 @@ int main(int argc, char *argv[]) {
     {
         case 0: // Child
             printf("Running child %s", argv[1]);
-            ptrace(PTRACE_TRACEME, 0, NULL, NULL);
+            ptrace(TRACE_ME, 0, NULL, 0);
             exec_error = execl(argv[1], basename(argv[1]), NULL);
             printf("Error in exec(): %d", exec_error);
             break;
@@ -44,16 +55,11 @@ int main(int argc, char *argv[]) {
     while (isExited)
     {
         printf("waitpid() status: %x\n", status);
-        ptrace(PTRACE_CONT, pid, 0L, 0L);
+        ptrace(TRACE_CONTINUE, pid, 0L, 0L);
         pid = waitpid(pid, &status, 0);
         isExited = WIFEXITED(status) || (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL);
     }
     printf("waitpid() status: %x\n", status);
 
     return 0;
-}
-
-void loadSymbols()
-{
-
 }

@@ -1,4 +1,5 @@
 #include "Symbols.h"
+#include <stdlib.h>
 #include <bfd.h>
 
 atomic_flag Symbols::isBfdInit = ATOMIC_FLAG_INIT;
@@ -27,7 +28,7 @@ void Symbols::Load(string path)
         string name(bfd_asymbol_name(table[i]));
         long value = bfd_asymbol_value(table[i]);
 
-        printf("SYM: [%s] 0x%08x\n", name.c_str(), value);
+        printf("SYM: [%s] 0x%08lx\n", name.c_str(), value);
 
         mTable.insert(pair<string, long>(name, value));
     }
