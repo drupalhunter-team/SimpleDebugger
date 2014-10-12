@@ -2,7 +2,7 @@
 #include <string>
 #include <map>
 
-#define PACKAGE // Needed for Apple's MAcPorts version of bfd.h
+#define PACKAGE // Needed for Apple's MacPorts version of bfd.h
 
 using namespace std;
 
@@ -19,14 +19,3 @@ private:
 
     static void Init();
 };
-
-/*
-class Symbol
-{
-public:
-    string name;
-    long addr;
-
-    Symbol(char* _name, long _addr): name(_name), addr(_addr) {}
-};
-*/

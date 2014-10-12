@@ -2,6 +2,8 @@
 #include <stdlib.h>
 #include <bfd.h>
 
+#include <cxxabi.h>
+
 atomic_flag Symbols::isBfdInit = ATOMIC_FLAG_INIT;
 
 void Symbols::Load(string path)
@@ -25,10 +27,17 @@ void Symbols::Load(string path)
     }
 
     for (int i = 0; i < count; ++i) {
-        string name(bfd_asymbol_name(table[i]));
+        const char *name = bfd_asymbol_name(table[i]);
         long value = bfd_asymbol_value(table[i]);
 
-        printf("SYM: [%s] 0x%08lx\n", name.c_str(), value);
+        int status;
+        char *demangled = abi::__cxa_demangle(name + 1, 0, 0, &status);
+        if (status == 0) {
+            printf("SYM: [%s] 0x%08lx\n", demangled, value);
+
+        } else {
+            printf("SYM: [%s] 0x%08lx\n", name, value);
+        }
 
         mTable.insert(pair<string, long>(name, value));
     }
