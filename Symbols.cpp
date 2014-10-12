@@ -1,50 +1,47 @@
 #include "Symbols.h"
 #include <stdlib.h>
-#include <bfd.h>
 
 #include <cxxabi.h>
 
 atomic_flag Symbols::isBfdInit = ATOMIC_FLAG_INIT;
 
-void Symbols::Load(string path)
-{
+void Symbols::Load(char *path) {
     Init();
 
-    bfd *abfd = bfd_openr(path.c_str(), NULL); // TODO: close
-    if (abfd == NULL) {
+    mBfd = bfd_openr(path, NULL);
+    if (mBfd == NULL) {
         return;
     }
-    bfd_check_format(abfd, bfd_object);
+    bfd_check_format(mBfd, bfd_object);
 
-    long size = bfd_get_symtab_upper_bound(abfd);
+    long size = bfd_get_symtab_upper_bound(mBfd);
     if (size <= 0) {
         return;
     }
-    asymbol **table = (asymbol**)malloc((size_t)size); // TODO: free
-    long count = bfd_canonicalize_symtab(abfd, table);
-    if (count < 0) {
-        return;
-    }
+    asymbol **symtable = (asymbol**)malloc((size_t)size);
+    long count = bfd_canonicalize_symtab(mBfd, symtable);
+    if (count) {
+        for (int i = 0; i < count; ++i) {
+            const char *name = bfd_asymbol_name(symtable[i]);
+            const long value = bfd_asymbol_value(symtable[i]);
+            mTable.insert(pair<string, long>(name, value));
 
-    for (int i = 0; i < count; ++i) {
-        const char *name = bfd_asymbol_name(table[i]);
-        long value = bfd_asymbol_value(table[i]);
-
-        int status;
-        char *demangled = abi::__cxa_demangle(name + 1, 0, 0, &status);
-        if (status == 0) {
-            printf("SYM: [%s] 0x%08lx\n", demangled, value);
-
-        } else {
-            printf("SYM: [%s] 0x%08lx\n", name, value);
+            DebugPrintSym(name, value);
         }
-
-        mTable.insert(pair<string, long>(name, value));
     }
-    int a = 0;
+
+    free(symtable);
 }
 
-long Symbols::get(string name) {
+
+void Symbols::Close() {
+    if (mBfd != nullptr) {
+        bfd_close(mBfd);
+        mBfd = nullptr;
+    }
+}
+
+long Symbols::Get(string name) {
     return mTable[name];
 }
 
@@ -53,4 +50,11 @@ void Symbols::Init() {
     if (isBfdInit.test_and_set()) {
         bfd_init();
     }
+}
+
+
+void Symbols::DebugPrintSym(const char *name, const long addr) {
+    int status;
+    const char *demangled = abi::__cxa_demangle(name + 1, 0, 0, &status);
+    printf("SYM: [%s] 0x%08lx\n", (status == 0) ? demangled : name, addr);
 }

@@ -51,13 +51,13 @@ int main(int argc, char *argv[]) {
 
     int status;
     pid = waitpid(pid, &status, 0);
-    int isExited = WIFEXITED(status) || (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL);
-    while (isExited)
+    while (WIFEXITED(status) || (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL))
     {
         printf("waitpid() status: %x\n", status);
+
         ptrace(TRACE_CONTINUE, pid, 0L, 0L);
+
         pid = waitpid(pid, &status, 0);
-        isExited = WIFEXITED(status) || (WIFSIGNALED(status) && WTERMSIG(status) == SIGKILL);
     }
     printf("waitpid() status: %x\n", status);
 
