@@ -55,6 +55,12 @@ void Symbols::Init() {
 
 void Symbols::DebugPrintSym(const char *name, const long addr) {
     int status;
-    const char *demangled = abi::__cxa_demangle(name + 1, 0, 0, &status);
-    printf("SYM: [%s] 0x%08lx\n", (status == 0) ? demangled : name, addr);
+#ifdef __APPLE__
+    const char *source = ++name;
+#else
+    const char *source = name;
+#endif
+    char *demangled = abi::__cxa_demangle(source, 0, 0, &status);
+    printf("SYM: [%s] 0x%08lx\n", (status == 0) ? (const char*)demangled : name, addr);
+    free(demangled);
 }
